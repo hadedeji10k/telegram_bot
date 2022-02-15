@@ -46,14 +46,21 @@ app.get("/", (req, res) => {
 
 app.post("/admin-send", async (req, res) => {
     const { userId, message } = req.body;
-    // console.log(userId, message)
-    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-        chat_id: userId,
-        text: message
-    })
-    res.render("successful", {
-        userId
-    });
+    if (userId != null && message != null && userId != undefined && message != undefined && userId != "" && message != "") {
+        // console.log(userId, message)
+        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+            chat_id: userId,
+            text: message
+        })
+        res.render("successful", {
+            success: true,
+            userId
+        });
+    } else {
+        res.render("successful", {
+            success: false
+        });
+    }
 })
 
 app.post(URI, async (req, res) => {

@@ -16,9 +16,17 @@
 		<div class="contact-box">
 			<div class="left"></div>
 			<div class="right">
-				<h2>Contact Us</h2> <br>
-				<h3>Message sent to user with ID <%= userId %> successfully.</h3> <br>
-				<h3>Click <a href="/">here</a> to go back home </h3>
+				<% if (success === true) { %>
+					<h2>Contact Us</h2> <br>
+					<h3>Message sent to user with ID <%= userId %> successfully.</h3> <br>
+					<h3>Click <a href="/">here</a> to go back home </h3>
+				<% } else { %>
+					<h2>Contact Us</h2> <br>
+					<h3>Message not sent successfully.</h3> <br>
+					<h3>Message or Chat ID is invalid.</h3> <br>
+					<h3>Click <a href="/">here</a> to go back home </h3>
+				<% } %>
+				
 			</div>
 		</div>
 	</div>
