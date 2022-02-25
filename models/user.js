@@ -8,7 +8,7 @@ const UserSchema = new Schema (
         lastName: {
             type: String,
         },
-        username: {
+        userName: {
             type: String,
         },
         chatId: {
