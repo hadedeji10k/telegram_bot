@@ -425,21 +425,21 @@ app.post("/alchemy", async (req, res) => {
                     chat_id: chatId,
                     text: `Hello ${userName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
                 });
-            } else {
-                let user = await User.findOne({ id: "6218ac18ba9ed3f855e7a854" });
-                if(user) {
-                    let chatId = user.chatId
-                    let userName = user.username
-                    let firstName = user.firstName
-                    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-                        chat_id: chatId,
-                        text: `Hello ${firstName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
-                    });
-                }
             }
+            // } else {
+            //     let user = await User.findOne({ id: "6218ac18ba9ed3f855e7a854" });
+            //     if(user) {
+            //         let chatId = user.chatId
+            //         let userName = user.username
+            //         let firstName = user.firstName
+            //         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+            //             chat_id: chatId,
+            //             text: `Hello ${firstName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
+            //         });
+            //     }
+            // }
         }
     }
-    console.log(req.body)
 })
 
 // app.listen(process.env.PORT || 3002, async () => {
