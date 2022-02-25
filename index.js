@@ -67,7 +67,83 @@ app.post("/admin-send", async (req, res) => {
     }
 })
 
+const addEthWallet = async (message, chatId, userName, firstName, lastName) => {
+    try {
+        let address = message.split(" ")[1];
+        if (address != null && address != undefined && address != "") {
+            // Checks if the address is already in a a user's account 
+            let addressMatched = await Address.findOne({ "ethWalletAddress": address });
+            // let addressMatched = await Address.findOne({ "ethWalletAddress": address });
+            if (addressMatched) {
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `This wallet address already exists`
+                });
+                return 
+            } else {
+                let user = await User.findOne({ chatId });
+                if (!user) {
+                    let newUser = new User({
+                        chatId,
+                        userName,
+                        firstName,
+                        lastName,
+                        // ethAddress: address
+                    });
+                    console.log(newUser)
+                    let newAddress = new Address({ 
+                        ethWalletAddress: address, 
+                        userId: newUser._id 
+                    })
+                    newUser.ethAddress.push(newAddress._id)
+                    await newUser.save();
+                    console.log("reached")
+
+                    // Adding the wallet address to Alchemy API 
+                    let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
+                    let payload = {
+                    "webhook_id":160296,
+                    "addresses_to_add": [address],
+                    "addresses_to_remove":[],
+                    }
+                    let headers = {"X-Alchemy-Token": "l6CjHMZFmF3jbts8ekpsGKKBuiyjkItL"}
+
+                    await axios.patch(url, payload, {headers})
+
+                    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `Your wallet has been added successfully!`
+                    });
+                } else {
+                    let newAddress = new Address({ 
+                        ethWalletAddress: address, 
+                        userId: newUser._id 
+                    })
+                    user.ethAddress.push(newAddress._id)
+                    await user.save();
+                    // user.ethAddress = address
+                    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `Your wallet has been updated successfully!`
+                    });
+                }
+            }            
+        } else {
+            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                chat_id: chatId,
+                text: `Please enter your wallet address!`
+            });
+        }
+    } catch (error) {
+        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+            chat_id: chatId,
+            text: `Error! Please try again.`
+        }); 
+    }
+}
+
 app.post(URI, async (req, res) => {
+    console.log(req.body);
     let chatId = req.body.message.chat.id;
     let message = req.body.message.text;
     let userName = req.body.message.chat.username;
@@ -84,77 +160,131 @@ app.post(URI, async (req, res) => {
         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
             chat_id: chatId,
             text: `Hello ${userName}!, Welcome to OgaNotifyBot — this bot will inform you when any transfer happens to your crypto address.
-            \n Use /addeth 'ETH address' to add a wallet
-            \n <b>COMMANDS:</b>
-            /addeth - Add Ethereum Wallet
-            /list - Get Wallets List
-            /deleteth - Delete Ethereum Wallet
-            \n Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
+            
+            \n COMMANDS:
+            /addeth - Add Ethereum Wallet \n
+            /deleteth - Delete Ethereum Wallet \n
+            /list - Get Wallets List \n
+            /help - Get Help \n
+            The address should be in the format: 0x1234567890123456789012345678901234567890 \n
+            Note: Use /addeth 'ETH address' to add a wallet \n
+            Note: You can add multiple wallets. \n
+            Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
         });
     }
 
     if (message.includes("/help")) {
         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
             chat_id: chatId,
-            text: `<b>COMMANDS:</b>
-            /addeth - Add Ethereum Wallet
-            /list - Get Wallets List
-            /deleteth - Delete Ethereum Wallet
-            \n Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
+            text: `COMMANDS: \n
+            /addeth - Add Ethereum Wallet \n
+            /list - Get Wallets List \n
+            /deleteth - Delete Ethereum Wallet \n
+            Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
         });
     }
 
     if (message.includes("/addeth")) {
-        if(message.chat.type == "private") {
+        if(req.body.message.chat.type == "private") {
+            // addEthWallet(message, chatId, userName, firstName, lastName)
             try {
                 let address = message.split(" ")[1];
                 if (address != null && address != undefined && address != "") {
                     // Checks if the address is already in a a user's account 
-                    let addressMatched = await User.findOne({ "ethAddress1": address });
+                    let addressMatched = await Address.findOne({ "ethWalletAddress": address });
                     // let addressMatched = await Address.findOne({ "ethWalletAddress": address });
                     if (addressMatched) {
                         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                             chat_id: chatId,
-                            text: `This wallet already exists`
+                            text: `This wallet address already exists`
                         });
                         return 
-                    }
-
-                    let user = await User.findOne({ chatId });
-                    if (!user) {
-                        let newUser = new User({
-                            chatId,
-                            userName,
-                            firstName,
-                            lastName,
-                            // ethAddress: address
-                        });
-                        newUser.ethAddress.push(address)
-                        await newUser.save();
-
-                        // Adding the wallet address to Alchemy API 
-                        let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
-                        let payload = {
-                        "webhook_id":160296,
-                        "addresses_to_add": [address],
-                        "addresses_to_remove":[],
-                        }
-                        let headers = {"X-Alchemy-Token": "l6CjHMZFmF3jbts8ekpsGKKBuiyjkItL"}
-
-                        await axios.patch(url, payload, {headers})
-
-                        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-                            chat_id: chatId,
-                            text: `Your wallet has been added successfully!`
-                        });
                     } else {
-                        user.ethAddress.push(address)
-                        // user.ethAddress = address
-                        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-                            chat_id: chatId,
-                            text: `Your wallet has been updated successfully!`
-                        });
-                    }
+                        let user = await User.findOne({ chatId });
+                        if (!user) {
+                            let newUser = new User({
+                                chatId,
+                                userName,
+                                firstName,
+                                lastName,
+                                // ethAddress: address
+                            });
+                            let newAddress = new Address({ 
+                                ethWalletAddress: address, 
+                                userId: newUser._id 
+                            })
+                            newUser.ethAddress.push(newAddress._id)
+                            await newUser.save();
+                            await newAddress.save();
+        
+                            // Adding the wallet address to Alchemy API 
+                            let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
+                            let payload = {
+                                "webhook_id":160296,
+                                "addresses_to_add": [address],
+                                "addresses_to_remove":[],
+                            }
+                            let headers = {"X-Alchemy-Token": "l6CjHMZFmF3jbts8ekpsGKKBuiyjkItL"}
+        
+                            await axios.patch(url, payload, {headers})
+        
+                            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                                chat_id: chatId,
+                                text: `Your wallet has been added successfully!`
+                            });
+                        } else {
+                            let currentUserAddresses = await Address.find({ userId: user._id})
+                            // console.log(currentUserAddresses)
+                            let userWalletAddressArray = []
+                            for (let i = 0; i < currentUserAddresses.length; i++) {
+                                userWalletAddressArray.push(currentUserAddresses[i].ethWalletAddress)
+                            }
+                            if (userWalletAddressArray.includes(address)) {
+                                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                                    chat_id: chatId,
+                                    text: `This wallet address already exists`
+                                });
+                            } else {
+                                let newAddress = new Address({
+                                    ethWalletAddress: address,
+                                    userId: user._id
+                                })
+                                user.ethAddress.push(newAddress._id)
+                                await user.save();
+                                await newAddress.save();
+                                // user.ethAddress = address
+
+                                // Adding the wallet address to Alchemy API 
+                                let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
+                                let payload = {
+                                    "webhook_id":160296,
+                                    "addresses_to_add": [address],
+                                    "addresses_to_remove":[],
+                                }
+                                let headers = {"X-Alchemy-Token": "l6CjHMZFmF3jbts8ekpsGKKBuiyjkItL"}
+            
+                                await axios.patch(url, payload, {headers})
+
+                                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                                    chat_id: chatId,
+                                    text: `Your wallet has been added successfully!`
+                                });
+                            }
+                        }
+                            // let newAddress = new Address({ 
+                            //     ethWalletAddress: address, 
+                            //     userId: user._id 
+                            // })
+                            // user.ethAddress.push(newAddress._id)
+                            // await user.save();
+                            // // user.ethAddress = address
+                            // await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                            //     chat_id: chatId,
+                            //     text: `Your wallet has been updated successfully!`
+                            // });
+                    
+                        
+                    }            
                 } else {
                     await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                         chat_id: chatId,
@@ -178,15 +308,22 @@ app.post(URI, async (req, res) => {
     if (message.includes("/list")) {
         let user = await User.findOne({ chatId });
         if (user) {
-            let ethAddress = user.ethAddress;
+            let currentUserAddresses = await Address.find({ userId: user._id})
             let ethAddressString = "";
-            for (let i = 0; i < ethAddress.length; i++) {
-                ethAddressString += `<b>${i + 1}</b> - ${ethAddress[i]} \n`
+            for (let i = 0; i < currentUserAddresses.length; i++) {
+                ethAddressString += `${i + 1} - ${currentUserAddresses[i].ethWalletAddress} \n`
             }
-            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
-                chat_id: chatId,
-                text: `<b>Wallets List:</b> \n ${ethAddressString}`
-            });
+            if(currentUserAddresses.length > 0) {
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `Wallets List: \n ${ethAddressString}`
+                });
+            } else {
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `You don't have any wallet yet!`
+                });
+            }
         } else {
             await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                 chat_id: chatId,
@@ -196,7 +333,8 @@ app.post(URI, async (req, res) => {
     }
 
     if (message.includes("/deleteth")) {
-        if(message.chat.type == "private") {
+        if(req.body.message.chat.type == "private") {
+            let user = await User.findOne({ chatId });
             try {
                 let address = message.split(" ")[1];
                 if (address != null && address != undefined && address != "") {
@@ -213,6 +351,12 @@ app.post(URI, async (req, res) => {
                         await axios.patch(url, payload, {headers})
 
                         await Address.deleteOne({ ethWalletAddress: address });
+
+                        // await user.ethAddress.filter(address => address != ethWalletAddress._id)
+
+                        let index = await user.ethAddress.indexOf(ethWalletAddress._id)
+                        await user.ethAddress.splice(index, 1);
+                        await user.save()
 
                         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                             chat_id: chatId,
@@ -263,20 +407,52 @@ app.post(URI, async (req, res) => {
     return res.send()
 })
 
+app.post("/alchemy", async (req, res) => {
+    if(req.body.webhookType === "ADDRESS_ACTIVITY") {
+        let transactions = req.body.activity
+        for(let i = 0; i < transactions.length; i++) {
+            let userAddress = transactions[i].toAddress
+            let senderAddress = transactions[i].fromAddress
+            let value = transactions[i].value
+            let asset = transactions[i].asset
+            let category = transactions[i].category
+            let addressFromDatabase = await Address.findOne({ ethWalletAddress: userAddress })
+            if (addressFromDatabase) {
+                let user = await User.findOne({ id: addressFromDatabase.userId });
+                let chatId = user.chatId
+                let userName = user.username
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `Hello ${userName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
+                });
+            } else {
+                let user = await User.findOne({ id: "0x7650E7Ae223BfeE4526142C7B3AA17a797d96e6d" });
+                let chatId = user.chatId
+                let userName = user.username
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `Hello ${userName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
+                });
+            }
+        }
+    }
+    console.log(req.body)
+})
+
 // app.listen(process.env.PORT || 3002, async () => {
 //     console.log("Server running on port ", process.env.PORT || 3002);
 //     await init()
 // })
 
-app.get("/address", async (req, res) => {
-    const users = await User.find({}).sort({createdAt: -1}).exec();
+// app.get("/address", async (req, res) => {
+//     const users = await User.find({}).sort({createdAt: -1}).exec();
 
-    return res.status(201).json({
-        message:  "Users Fetched Successfully!",
-        data: users,
-        success: true
-    })
-})
+//     return res.status(201).json({
+//         message:  "Users Fetched Successfully!",
+//         data: users,
+//         success: true
+//     })
+// })
 
 
 const startServer = async () => {
