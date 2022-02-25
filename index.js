@@ -420,7 +420,7 @@ app.post("/alchemy", async (req, res) => {
             if (addressFromDatabase) {
                 let user = await User.findOne({ id: addressFromDatabase.userId });
                 let chatId = user.chatId
-                let userName = user.username
+                let userName = user.userName
                 await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                     chat_id: chatId,
                     text: `Hello ${userName}, Your wallet ${userAddress} has been credited with ${value}${asset} successfully! Sent from ${senderAddress}`
@@ -430,7 +430,7 @@ app.post("/alchemy", async (req, res) => {
             //     let user = await User.findOne({ id: "6218ac18ba9ed3f855e7a854" });
             //     if(user) {
             //         let chatId = user.chatId
-            //         let userName = user.username
+            //         let userName = user.userName
             //         let firstName = user.firstName
             //         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
             //             chat_id: chatId,
@@ -442,17 +442,13 @@ app.post("/alchemy", async (req, res) => {
     }
 })
 
-// app.listen(process.env.PORT || 3002, async () => {
-//     console.log("Server running on port ", process.env.PORT || 3002);
-//     await init()
-// })
-
 // app.get("/address", async (req, res) => {
-//     const users = await User.find({}).sort({createdAt: -1}).exec();
+//     // const users = await User.find({}).sort({createdAt: -1}).exec();
+//     let user = await User.findOne({ id: "6218ac18ba9ed3f855e7a854" });
 
 //     return res.status(201).json({
 //         message:  "Users Fetched Successfully!",
-//         data: users,
+//         data: user,
 //         success: true
 //     })
 // })
