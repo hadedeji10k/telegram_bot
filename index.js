@@ -88,6 +88,18 @@ app.post(URI, async (req, res) => {
             \n <b>COMMANDS:</b>
             /addeth - Add Ethereum Wallet
             /list - Get Wallets List
+            /deleteth - Delete Ethereum Wallet
+            \n Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
+        });
+    }
+
+    if (message.includes("/help")) {
+        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+            chat_id: chatId,
+            text: `<b>COMMANDS:</b>
+            /addeth - Add Ethereum Wallet
+            /list - Get Wallets List
+            /deleteth - Delete Ethereum Wallet
             \n Don't forget to Join @OgaNotifyBot to follow the latest news! \n Why don't you start by adding a wallet?`
         });
     }
@@ -163,6 +175,74 @@ app.post(URI, async (req, res) => {
         }
     }
 
+    if (message.includes("/list")) {
+        let user = await User.findOne({ chatId });
+        if (user) {
+            let ethAddress = user.ethAddress;
+            let ethAddressString = "";
+            for (let i = 0; i < ethAddress.length; i++) {
+                ethAddressString += `<b>${i + 1}</b> - ${ethAddress[i]} \n`
+            }
+            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                chat_id: chatId,
+                text: `<b>Wallets List:</b> \n ${ethAddressString}`
+            });
+        } else {
+            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                chat_id: chatId,
+                text: `You don't have any wallet yet!`
+            });
+        }
+    }
+
+    if (message.includes("/deleteth")) {
+        if(message.chat.type == "private") {
+            try {
+                let address = message.split(" ")[1];
+                if (address != null && address != undefined && address != "") {
+                    let ethWalletAddress = await Address.findOne({ ethWalletAddress: address });
+                    if (ethWalletAddress) {
+                        let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
+                        let payload = {
+                        "webhook_id":160296,
+                        "addresses_to_add": [],
+                        "addresses_to_remove":[address],
+                        }
+                        let headers = {"X-Alchemy-Token": "l6CjHMZFmF3jbts8ekpsGKKBuiyjkItL"}
+
+                        await axios.patch(url, payload, {headers})
+
+                        await Address.deleteOne({ ethWalletAddress: address });
+
+                        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                            chat_id: chatId,
+                            text: `Your wallet has been deleted successfully!`
+                        });
+                    } else {
+                        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                            chat_id: chatId,
+                            text: `You don't have any wallet yet!`
+                        });
+                    }
+                } else {
+                    await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                        chat_id: chatId,
+                        text: `Please enter your wallet address!`
+                    });
+                }
+            } catch (error) {
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `Error! Please try again.`
+                });
+            }
+        } else {
+            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                chat_id: chatId,
+                text: `You can only delete a wallet from a private chat`
+            });
+        }
+    }
 
     if (chatId === CUSTOMER_CARE) {
         let responseToUser = message.split("'/'")
