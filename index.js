@@ -158,6 +158,20 @@ app.post(URI, async (req, res) => {
     //     });
     // }
 
+    if(!(message.includes("/start") || message.includes("/help") || message.includes("/addeth") || message.includes("/deleteth") || message.includes("/list"))) {
+        await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+            chat_id: chatId,
+            text: `Hello ${userName}!, Input a correct command
+            COMMANDS: \n
+            /addeth - Add Ethereum Wallet \n
+            /list - Get Wallets List \n
+            /deleteth - Delete Ethereum Wallet \n
+            /help - Get Help \n
+            `
+
+        });
+    }
+
     // Action for Command /start
     if (message.includes("/start")) {
         await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
