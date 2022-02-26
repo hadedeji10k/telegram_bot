@@ -21,7 +21,11 @@ const UserSchema = new Schema (
         ethAddress: [{
             type: Schema.Types.ObjectId,
             ref: "Address",
-        }]
+        }],
+        transactions: [{
+            type: Schema.Types.ObjectId,
+            ref: "Transaction",
+        }],
     },
     { timestamps: true }
 )

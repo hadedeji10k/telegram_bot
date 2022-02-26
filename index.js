@@ -418,7 +418,7 @@ app.post(URI, async (req, res) => {
             if(currentUserAddresses.length > 0) {
                 await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                     chat_id: chatId,
-                    text: `Wallets List: \n ${ethAddressString}`
+                    text: `Wallet(s) List: \n ${ethAddressString}`
                 });
             } else {
                 // if the user has no wallet
@@ -432,6 +432,38 @@ app.post(URI, async (req, res) => {
             await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
                 chat_id: chatId,
                 text: `You don't have any wallet yet!`
+            });
+        }
+    }
+
+    // Action for Command /transactions
+    if (message.includes("/transactions")) {
+        // finds user in database using the chatId
+        let user = await User.findOne({ chatId });
+        if (user) {
+            // get all wallet addresses from user account
+            let userTransactions = await Transaction.find({ userId: user._id})
+            let transactionsString = "";
+            for (let i = 0; i < userTransactions.length; i++) {
+                transactionsString += `${i + 1} - ${userTransactions[i].value}${userTransactions[i].asset} \n`
+            }
+            if(userTransactions.length > 0) {
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `Transaction(s) List: \n ${transactionsString}`
+                });
+            } else {
+                // if the user has no wallet
+                await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                    chat_id: chatId,
+                    text: `You don't have any transaction yet!`
+                });
+            }
+        } else {
+            // if the user is not in the database
+            await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
+                chat_id: chatId,
+                text: `You don't have any transaction yet!`
             });
         }
     }
@@ -480,9 +512,11 @@ app.post("/alchemy", async (req, res) => {
                 if (user) {
                     let transaction = new Transaction({
                         userId: user._id,
-                        ethWalletAddress: userAddress,
+                        ethWalletAddress: addressFromDatabase._id,
+                        receiverAddress: userAddress,
                         senderAddress: senderAddress,
-                        value: value
+                        value: value,
+                        asset: asset
                     })
                     await transaction.save()
 

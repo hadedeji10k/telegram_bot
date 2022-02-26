@@ -10,12 +10,20 @@ const TransactionSchema = new Schema (
             type: Schema.Types.ObjectId,
             ref: "Address",
         },
+        receiverAddress: {
+            type: String,
+            required: true
+        },
         senderAddress: {
             type: String,
             required: true,
         },
         value: {
             type: Number,
+            required: true,
+        },
+        asset: {
+            type: String,
             required: true,
         }
     },
