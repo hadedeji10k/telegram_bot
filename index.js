@@ -84,6 +84,7 @@ const addEthWallet = async (message, chatId, userName, firstName, lastName) => {
             } else {
                 let user = await User.findOne({ chatId });
                 if (!user) {
+                    // Create a new user
                     let newUser = new User({
                         chatId,
                         userName,
@@ -91,14 +92,13 @@ const addEthWallet = async (message, chatId, userName, firstName, lastName) => {
                         lastName,
                         // ethAddress: address
                     });
-                    console.log(newUser)
+                    // Add new address to the database
                     let newAddress = new Address({ 
                         ethWalletAddress: address, 
                         userId: newUser._id 
                     })
                     newUser.ethAddress.push(newAddress._id)
                     await newUser.save();
-                    console.log("reached")
 
                     // Adding the wallet address to Alchemy API 
                     let url = 'https://dashboard.alchemyapi.io/api/update-webhook-addresses'
@@ -144,7 +144,6 @@ const addEthWallet = async (message, chatId, userName, firstName, lastName) => {
 }
 
 app.post(URI, async (req, res) => {
-    console.log(req.body);
     let chatId = req.body.message.chat.id;
     let message = req.body.message.text;
     let userName = req.body.message.chat.username;
