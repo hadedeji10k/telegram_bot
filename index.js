@@ -567,6 +567,12 @@ const startServer = async () => {
       app.listen(process.env.PORT || 3001, async () => {
         console.log("Server running on port ", process.env.PORT || 3001);
         await init()
+        setInterval(async () => {
+            await axios.get('https://www.google.com').then((res) => {
+                console.log(res.status)
+            });
+        }
+        , 900000)
       });
     } catch (err) {
       console.log(err);
